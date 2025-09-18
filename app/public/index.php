@@ -3,25 +3,19 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 $config = new \Esia\Config([
-    'clientId' => 'PLACE-HERE-YOUR-SYSTEM-MNEMONIC', // Мнемоника вашей системы
-    'redirectUrl' => 'http://127.0.0.1:8000/response.php',
+    'clientId' => '230A03',
+    'redirectUrl' => 'http://localhost:8000/response.php',
     'portalUrl' => 'https://esia-portal1.test.gosuslugi.ru/',
-    'scope' => [
-        'fullname',
-        'birthdate',
-        'birthplace',
-        'email',
-        'mobile',
-        'contacts',
-        'id_doc',
-        'snils',
-        'inn',
-    ],
-    'certPath' => __DIR__ . '/../resources/ekapusta.gost.test.cer',
-    'privateKeyPath' => __DIR__ . '/../resources/ekapusta.gost.test.key',
+    'scope' => ['openid', 'fullname', 'id_doc'], // Добавлен openid
+        'certPath' => __DIR__ . '/../resources/ekapusta.gost.test.cer',
+        'privateKeyPath' => __DIR__ . '/../resources/ekapusta.gost.test.key',
+    'token' => 'secret', // Добавлен секретный ключ
+    
 ]);
 
 $esia = new \Esia\OpenId($config);
+
+$authUrl = $esia->buildUrl();
+header('Location: '. $authUrl);
 ?>
 
-<a href="<?= $esia->buildUrl() ?>">Войти через портал Госуслуги</a>

@@ -21,3 +21,4 @@ services:
             context: docker/php-cli
         volumes:
             - './app:/app'
+        command: tail -f /dev/null  # Держит контейнер активным
