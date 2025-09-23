@@ -1,0 +1,35 @@
+{
+  "name": "fr05t1k/esia",
+  "license": "MIT",
+  "description": "OpenID ESIA authenticating",
+  "keywords": [
+    "esia",
+    "openid",
+    "egov"
+  ],
+  "autoload": {
+    "psr-4": {
+      "Esia\\": "src/Esia"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "tests\\" : "tests"
+    }
+  },
+  "require": {
+    "php": "^7.1|^8.0",
+    "guzzlehttp/guzzle": "^6.1.0|^7.0",
+    "psr/log": "^1.0",
+    "psr/http-message": "^1.0",
+    "psr/http-client": "^1.0"
+  },
+  "suggest": {
+    "ext-openssl": "SignerPKCS7 support"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest",
+    "codeception/codeception": "^4.0",
+    "codeception/module-asserts": "^1.3"
+  }
+}

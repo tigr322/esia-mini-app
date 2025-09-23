@@ -1,4 +1,5 @@
 <?php
+session_start();
 
 use Esia\Http\GuzzleHttpClient;
 use GuzzleHttp\Client;
@@ -12,7 +13,7 @@ print_r($_GET);
 
 $config = new \Esia\Config([
     'clientId' => '230A03',
-    'redirectUrl' => 'http://localhost:8000/response.php', 
+    'redirectUrl' => 'http://10.20.0.10:81/response.php', 
     'portalUrl' => 'https://esia-portal1.test.gosuslugi.ru/',
     'scope' => ['openid', 'fullname', 'id_doc'], 
     'certPath' => __DIR__ . '/../resources/ekapusta.gost.test.cer',
@@ -90,14 +91,14 @@ Array
         
         't' => time()
     ];
-    
+   
     // Добавьте JSON_UNESCAPED_UNICODE
     $encoded = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));
-    header('Location: http://localhost/vp.html?data=' . urlencode($encoded));
+    header('Location: http://10.20.0.10:80/vp.html?data=' . urlencode($encoded));
     exit();
 }
         
-            
+$_SESSION(urlencode($encoded));          
 } catch (Exception $e) {
     echo "<h3>Error:</h3>";
     echo "Message: " . $e->getMessage() . "<br>";
