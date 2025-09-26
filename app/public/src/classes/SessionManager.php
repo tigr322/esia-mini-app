@@ -9,8 +9,114 @@ class SessionManager
     public function __construct()
     {
         $this->pdo = Database::getInstance()->getConnection();
-    }
+        $this->createRateLimitTable();
+    }   // Создаем таблицу при инициализации
 
+     private function createRateLimitTable(): void
+    {
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS rate_limits (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ip_address VARCHAR(45) NOT NULL,
+                action VARCHAR(50) NOT NULL,
+                attempts INT DEFAULT 0,
+                last_attempt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                blocked_until TIMESTAMP NULL,
+                INDEX idx_ip_action (ip_address, action),
+                INDEX idx_blocked (blocked_until)
+            )
+        ");
+    }
+    
+    public function checkRateLimit(string $ip, string $action = 'session_verify', int $maxAttempts = 5, int $blockTime = 900): bool
+    {
+        // Очищаем старые записи
+        $this->cleanupRateLimits();
+        
+        $stmt = $this->pdo->prepare("
+            SELECT attempts, blocked_until 
+            FROM rate_limits 
+            WHERE ip_address = ? AND action = ?
+        ");
+        $stmt->execute([$ip, $action]);
+        $limit = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Если заблокирован
+        if ($limit && $limit['blocked_until'] && strtotime($limit['blocked_until']) > time()) {
+            return false;
+        }
+        
+        // Если разблокирован, но были попытки
+        if ($limit) {
+            // Сбрасываем если прошло больше часа с последней попытки
+            if (time() - strtotime($limit['last_attempt']) > 3600) {
+                $this->resetRateLimit($ip, $action);
+                return true;
+            }
+            
+            // Проверяем лимит
+            if ($limit['attempts'] >= $maxAttempts) {
+                $this->blockIP($ip, $action, $blockTime);
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    public function incrementRateLimit(string $ip, string $action = 'session_verify'): void
+    {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO rate_limits (ip_address, action, attempts, last_attempt) 
+            VALUES (?, ?, 1, NOW()) 
+            ON DUPLICATE KEY UPDATE 
+            attempts = attempts + 1, 
+            last_attempt = NOW()
+        ");
+        $stmt->execute([$ip, $action]);
+    }
+    
+    private function blockIP(string $ip, string $action, int $blockTime): void
+    {
+        $blockUntil = date('Y-m-d H:i:s', time() + $blockTime);
+        $stmt = $this->pdo->prepare("
+            UPDATE rate_limits 
+            SET blocked_until = ? 
+            WHERE ip_address = ? AND action = ?
+        ");
+        $stmt->execute([$blockUntil, $ip, $action]);
+        
+        error_log("IP blocked: $ip for action: $action until: $blockUntil");
+    }
+    
+    public function resetRateLimit(string $ip, string $action): void
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE rate_limits 
+            SET attempts = 0, blocked_until = NULL 
+            WHERE ip_address = ? AND action = ?
+        ");
+        $stmt->execute([$ip, $action]);
+    }
+    
+    private function cleanupRateLimits(): void
+    {
+        $this->pdo->exec("
+            DELETE FROM rate_limits 
+            WHERE last_attempt < DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        ");
+    }
+    
+    public function getRateLimitInfo(string $ip, string $action = 'session_verify'): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT attempts, last_attempt, blocked_until 
+            FROM rate_limits 
+            WHERE ip_address = ? AND action = ?
+        ");
+        $stmt->execute([$ip, $action]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    }
     /**
      * Сохраняет сессию с идентификатором для верификации
      */
