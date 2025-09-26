@@ -1,16 +1,31 @@
 FROM php:8.1-fpm-bullseye
 
-RUN apt-get update && apt-get install wget unzip openssl libssl-dev -y
+RUN apt-get update && apt-get install -y \
+    wget \
+    unzip \
+    openssl \
+    libssl-dev \
+    git \
+    curl \
+    default-mysql-client \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libxml2-dev \
+    libonig-dev
+
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql mysqli mbstring exif pcntl bcmath gd zip
 
 # Install GOST-engine for OpenSSL
-# Instruction: https://github.com/gost-engine/engine/blob/openssl_1_1_1/INSTALL.md
 ARG ENGINES_DIR="/usr/lib/x86_64-linux-gnu/engines-1.1"
 ARG OPENSSL_LIB_DIR="/usr/lib/ssl"
-# Commit May 20, 2022
-# URL: https://github.com/gost-engine/engine/archive/739f957615eb33a33a6485ae7cf29c7c679fd59a.zip
 ARG GOST_ENGINE_VERSION=739f957615eb33a33a6485ae7cf29c7c679fd59a
 ARG GOST_ENGINE_SHA256="99e047a239b374b62edd5e543cd76ac15f85b58adadc18f59f962e65008d126d"
-RUN apt-get install cmake -y \
+
+RUN apt-get install -y cmake \
   && cd /usr/local/src \
   && wget "https://github.com/gost-engine/engine/archive/${GOST_ENGINE_VERSION}.zip" -O gost-engine.zip \
   && echo "$GOST_ENGINE_SHA256" gost-engine.zip | sha256sum -c - \
