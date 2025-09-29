@@ -10,7 +10,7 @@ class SessionManager
     {
         $this->pdo = Database::getInstance()->getConnection();
         $this->createRateLimitTable();
-    }   // Создаем таблицу при инициализации
+    }
 
      private function createRateLimitTable(): void
     {
@@ -30,7 +30,6 @@ class SessionManager
     
     public function checkRateLimit(string $ip, string $action = 'session_verify', int $maxAttempts = 5, int $blockTime = 900): bool
     {
-        // Очищаем старые записи
         $this->cleanupRateLimits();
         
         $stmt = $this->pdo->prepare("

@@ -15,7 +15,7 @@ $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
 $config = new Config([
     'clientId' => '230A03',
-    'redirectUrl' => 'http://localhost:8000/response.php',
+    'redirectUrl' => 'http://10.20.0.10:8000/response.php',
     'portalUrl' => 'https://esia-portal1.test.gosuslugi.ru/',
     'scope' => ['openid', 'fullname', 'id_doc'],
     'certPath' => __DIR__ . '/../resources/ekapusta.gost.test.cer',
@@ -31,10 +31,9 @@ function setVerificationCookie(string $verificationId, int $lifetime = 8100): vo
         [
             'expires' => time() + $lifetime,
             'path' => '/',
-            'domain' => '.localhost',
+            'domain' => '10.20.0.10', // Без точки в начале
             'secure' => false,
-            'httponly' => true,
-            'samesite' => 'Strict'
+            'httponly' => false,
         ]
     );
 }
@@ -82,7 +81,7 @@ try {
         setVerificationCookie($sessionInfo['verification_id']);
 
         // Редирект
-        header('Location: http://localhost/vp.html?sid=' . urlencode($sessionId));
+        header('Location: http://10.20.0.10:80/vp.html?sid=' . urlencode($sessionId));
         exit();
     }
 
